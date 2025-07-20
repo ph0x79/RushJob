@@ -23,7 +23,7 @@ class UserAlertBase(BaseModel):
     # Notification settings
     discord_webhook_url: Optional[HttpUrl] = None
     email_address: Optional[str] = Field(None, max_length=255)
-    notification_frequency: str = Field("immediate", regex="^(immediate|daily|weekly)$")
+    notification_frequency: str = Field("immediate", pattern="^(immediate|daily|weekly)$")
 
 
 class UserAlertCreate(UserAlertBase):
@@ -44,7 +44,7 @@ class UserAlertUpdate(UserAlertBase):
     include_remote: Optional[bool] = None
     discord_webhook_url: Optional[HttpUrl] = None
     email_address: Optional[str] = Field(None, max_length=255)
-    notification_frequency: Optional[str] = Field(None, regex="^(immediate|daily|weekly)$")
+    notification_frequency: Optional[str] = Field(None, pattern="^(immediate|daily|weekly)$")
 
 
 class UserAlertResponse(UserAlertBase):
