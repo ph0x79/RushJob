@@ -391,6 +391,15 @@ class JobPollingService:
             logger.error(f"Error sending initial alert notification: {e}")
             return False
     
+    async def poll_once(self) -> Dict[str, any]:
+        """
+        Run a single poll cycle manually.
+        
+        Returns:
+            Polling statistics
+        """
+        return await self.poll_all_companies()
+
     async def close(self) -> None:
         """Close all client connections."""
         await self.greenhouse_client.close()

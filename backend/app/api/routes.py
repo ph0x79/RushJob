@@ -34,31 +34,39 @@ async def get_companies(db: AsyncSession = Depends(get_db)):
 @router.post("/companies/seed")
 async def seed_companies(db: AsyncSession = Depends(get_db)):
     """Seed database with verified Greenhouse companies."""
-    added_companies = []
-    
-    for company_data in VERIFIED_GREENHOUSE_COMPANIES:
-        # Check if company already exists
-        result = await db.execute(
-            select(Company).where(Company.slug == company_data["slug"])
-        )
-        existing_company = result.scalar_one_or_none()
+    try:
+        added_companies = []
         
-        if not existing_company:
-            company = Company(
-                name=company_data["name"],
-                slug=company_data["slug"],
-                ats_type="greenhouse",
-                api_endpoint=f"https://boards-api.greenhouse.io/v1/boards/{company_data['slug']}/jobs"
+        for company_data in VERIFIED_GREENHOUSE_COMPANIES:
+            # Check if company already exists
+            result = await db.execute(
+                select(Company).where(Company.slug == company_data["slug"])
             )
-            db.add(company)
-            added_companies.append(company_data["name"])
-    
-    await db.commit()
-    
-    return {
-        "message": f"Added {len(added_companies)} companies",
-        "companies": added_companies
-    }
+            existing_company = result.scalar_one_or_none()
+            
+            if not existing_company:
+                company = Company(
+                    name=company_data["name"],
+                    slug=company_data["slug"],
+                    ats_type="greenhouse",
+                    api_endpoint=f"https://boards-api.greenhouse.io/v1/boards/{company_data['slug']}/jobs"
+                )
+                db.add(company)
+                added_companies.append(company_data["name"])
+        
+        await db.commit()
+        
+        return {
+            "message": f"Added {len(added_companies)} companies",
+            "companies": added_companies
+        }
+    except Exception as e:
+        logger.error(f"Error seeding companies: {e}")
+        await db.rollback()
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to seed companies: {str(e)}"
+        )
 
 
 # User alerts endpoints
