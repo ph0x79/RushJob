@@ -1,6 +1,7 @@
 """
 Core configuration for RushJob backend.
 """
+import os
 from typing import Optional
 from pydantic import Field
 from pydantic_settings import BaseSettings
@@ -14,13 +15,25 @@ class Settings(BaseSettings):
     app_version: str = "0.1.0"
     debug: bool = False
     
-    # Database
-    database_url: str = Field(..., description="PostgreSQL connection string")
+    # Database - check both upper and lowercase
+    database_url: str = Field(
+        default_factory=lambda: os.getenv('DATABASE_URL') or os.getenv('database_url'),
+        description="PostgreSQL connection string"
+    )
     
-    # Supabase
-    supabase_url: str = Field(..., description="Supabase project URL")
-    supabase_anon_key: str = Field(..., description="Supabase anonymous key")
-    supabase_service_key: str = Field(..., description="Supabase service role key")
+    # Supabase - check both upper and lowercase  
+    supabase_url: str = Field(
+        default_factory=lambda: os.getenv('SUPABASE_URL') or os.getenv('supabase_url'),
+        description="Supabase project URL"
+    )
+    supabase_anon_key: str = Field(
+        default_factory=lambda: os.getenv('SUPABASE_ANON_KEY') or os.getenv('supabase_anon_key'),
+        description="Supabase anonymous key"
+    )
+    supabase_service_key: str = Field(
+        default_factory=lambda: os.getenv('SUPABASE_SERVICE_KEY') or os.getenv('supabase_service_key'),
+        description="Supabase service role key"
+    )
     
     # API Configuration
     api_v1_prefix: str = "/api/v1"
@@ -43,6 +56,12 @@ class Settings(BaseSettings):
     class Config:
         env_file = ".env"
         case_sensitive = False
+        # Also check uppercase versions for Railway
+        env_prefix = ""
+        
+        @classmethod
+        def parse_env_var(cls, field_name: str, raw_val: str) -> any:
+            return raw_val
 
 
 # Global settings instance
