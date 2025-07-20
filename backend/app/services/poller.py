@@ -100,7 +100,7 @@ class JobPollingService:
                 Company.is_active == True,
                 Company.ats_type == "greenhouse",
                 (Company.last_polled_at.is_(None) | 
-                 (Company.last_polled_at < now - timedelta(minutes=Company.poll_interval_minutes)))
+                 (Company.last_polled_at < now - timedelta(minutes=15)))  # Use fixed interval for now
             )
         )
         

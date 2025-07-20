@@ -4,7 +4,7 @@ API routes for RushJob.
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, text
 from loguru import logger
 
 from app.core.database import get_db
@@ -67,6 +67,27 @@ async def seed_companies(db: AsyncSession = Depends(get_db)):
             status_code=500,
             detail=f"Failed to seed companies: {str(e)}"
         )
+
+
+@router.get("/debug/db")
+async def debug_database():
+    """Debug database connection."""
+    try:
+        from app.core.database import AsyncSessionLocal
+        async with AsyncSessionLocal() as db:
+            # Try a simple query
+            result = await db.execute(text("SELECT 1 as test"))
+            test_result = result.scalar()
+            return {
+                "database_connection": "success",
+                "test_query_result": test_result
+            }
+    except Exception as e:
+        return {
+            "database_connection": "failed",
+            "error": str(e),
+            "error_type": type(e).__name__
+        }
 
 
 # User alerts endpoints
