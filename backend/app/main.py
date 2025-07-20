@@ -32,8 +32,12 @@ async def lifespan(app: FastAPI):
     )
     
     # Initialize database
-    await init_db()
-    logger.info("Database initialized")
+    try:
+        await init_db()
+        logger.info("Database initialized successfully")
+    except Exception as e:
+        logger.error(f"Database initialization failed: {e}")
+        logger.warning("App will start without database - some features may not work")
     
     # Start background polling if not in debug mode
     global polling_scheduler
@@ -85,6 +89,19 @@ async def root():
         "message": "Welcome to RushJob API",
         "version": settings.app_version,
         "status": "running"
+    }
+
+
+@app.get("/debug/env")
+async def debug_env():
+    """Debug endpoint to check environment variables (remove in production)."""
+    import os
+    return {
+        "has_database_url": bool(os.getenv("DATABASE_URL") or os.getenv("database_url")),
+        "has_supabase_url": bool(os.getenv("SUPABASE_URL") or os.getenv("supabase_url")),
+        "database_url_prefix": (os.getenv("DATABASE_URL") or os.getenv("database_url", ""))[:30] + "...",
+        "port": os.getenv("PORT"),
+        "debug_mode": settings.debug
     }
 
 
