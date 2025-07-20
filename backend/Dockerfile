@@ -8,17 +8,11 @@ RUN apt-get update && apt-get install -y \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Poetry
-RUN pip install poetry
+# Copy requirements file
+COPY requirements.txt ./
 
-# Copy poetry files
-COPY pyproject.toml poetry.lock ./
-
-# Configure poetry
-RUN poetry config virtualenvs.create false
-
-# Install dependencies
-RUN poetry install --no-dev
+# Install dependencies from requirements.txt
+RUN pip install -r requirements.txt
 
 # Copy application code
 COPY . .
