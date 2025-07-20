@@ -1,0 +1,34 @@
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*.so
+*.egg-info/
+.env
+.venv/
+venv/
+*.sqlite3
+*.log
+*.db
+.coverage
+.tox/
+dist/
+build/
+.mypy_cache/
+.pytest_cache/
+.python-version
+
+# ---- Poetry ----
+poetry.lock
+
+# ---- OS ----
+.DS_Store
+Thumbs.db
+
+# ---- Editor/Tooling ----
+.vscode/
+.idea/
+*.swp
+
+# ---- Local development ----
+docker-compose.override.yml
+postgres_data/

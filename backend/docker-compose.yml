@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  # PostgreSQL database for local development
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: rushjob_dev
+      POSTGRES_USER: rushjob
+      POSTGRES_PASSWORD: password123
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rushjob -d rushjob_dev"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # RushJob backend
+  backend:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql+asyncpg://rushjob:password123@postgres:5432/rushjob_dev
+      DEBUG: true
+      LOG_LEVEL: INFO
+      # Add your Supabase credentials here
+      SUPABASE_URL: https://your-project.supabase.co
+      SUPABASE_ANON_KEY: your-anon-key
+      SUPABASE_SERVICE_KEY: your-service-key
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - .:/app
+    command: >
+      sh -c "
+        python -c 'import asyncio; from app.core.database import init_db; asyncio.run(init_db())' &&
+        uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+      "
+
+volumes:
+  postgres_data:
