@@ -14,7 +14,6 @@ class GreenhouseJob:
     """Represents a job from Greenhouse API."""
     
     def __init__(self, data: Dict[str, Any]):
-        self.location_matcher = LocationMatcher()
         self.raw_data = data
         self.id = str(data.get("id", ""))
         self.title = data.get("title", "")
@@ -22,6 +21,9 @@ class GreenhouseJob:
         self.department = self._parse_department(data.get("departments", []))
         self.absolute_url = data.get("absolute_url", "")
         self.job_type = self._parse_job_type(data.get("metadata", []))
+        
+        # Initialize location matcher for enhanced detection
+        self._location_matcher = None
         
     def _parse_location(self, location_data: Dict[str, Any]) -> str:
         """Parse location from Greenhouse format with enhanced normalization."""
@@ -32,8 +34,8 @@ class GreenhouseJob:
         if not name:
             return ""
         
-        # Use location matcher for better remote detection
-        if self.location_matcher.is_remote_location(name):
+        # Basic remote detection without LocationMatcher during init
+        if "remote" in name.lower():
             return "Remote"
         
         # Clean up common location format issues
@@ -75,7 +77,10 @@ class GreenhouseJob:
     
     def is_remote(self) -> bool:
         """Check if job is remote using enhanced detection."""
-        return self.location_matcher.is_remote_location(self.location)
+        if self._location_matcher is None:
+            from app.services.location_matcher import LocationMatcher
+            self._location_matcher = LocationMatcher()
+        return self._location_matcher.is_remote_location(self.location)
 
 
 class GreenhouseClient:
