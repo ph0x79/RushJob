@@ -227,6 +227,36 @@ async def delete_alert(
     return {"message": "Alert deleted successfully"}
 
 
+@router.get("/debug/jobs-count")
+async def debug_jobs_count(db: AsyncSession = Depends(get_db)):
+    """Simple endpoint to check job count."""
+    try:
+        from sqlalchemy import func
+        result = await db.execute(
+            select(func.count(Job.id)).where(Job.is_active == True)
+        )
+        count = result.scalar()
+        return {"total_jobs": count}
+    except Exception as e:
+        return {"error": str(e)}
+
+
+@router.get("/debug/jobs-simple")
+async def debug_jobs_simple(limit: int = 5, db: AsyncSession = Depends(get_db)):
+    """Simple jobs endpoint without response model."""
+    try:
+        result = await db.execute(
+            select(Job.id, Job.title, Job.company_id)
+            .where(Job.is_active == True)
+            .order_by(Job.first_seen_at.desc())
+            .limit(limit)
+        )
+        jobs = result.all()
+        return {"jobs": [dict(row._mapping) for row in jobs]}
+    except Exception as e:
+        return {"error": str(e)}
+
+
 # Jobs endpoints
 @router.get("/jobs", response_model=List[JobResponse])
 async def get_jobs(
@@ -235,23 +265,30 @@ async def get_jobs(
     db: AsyncSession = Depends(get_db)
 ):
     """Get recent jobs, optionally filtered by company."""
-    query = select(Job).where(Job.is_active == True)
-    
-    if company_slugs:
-        slug_list = company_slugs.split(",")
-        companies_result = await db.execute(
-            select(Company).where(Company.slug.in_(slug_list))
+    try:
+        query = select(Job).where(Job.is_active == True)
+        
+        if company_slugs:
+            slug_list = company_slugs.split(",")
+            companies_result = await db.execute(
+                select(Company).where(Company.slug.in_(slug_list))
+            )
+            companies = companies_result.scalars().all()
+            company_ids = [c.id for c in companies]
+            query = query.where(Job.company_id.in_(company_ids))
+        
+        query = query.order_by(Job.first_seen_at.desc()).limit(limit)
+        
+        result = await db.execute(query)
+        jobs = result.scalars().all()
+        
+        return jobs
+    except Exception as e:
+        logger.error(f"Error fetching jobs: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to fetch jobs: {str(e)}"
         )
-        companies = companies_result.scalars().all()
-        company_ids = [c.id for c in companies]
-        query = query.where(Job.company_id.in_(company_ids))
-    
-    query = query.order_by(Job.first_seen_at.desc()).limit(limit)
-    
-    result = await db.execute(query)
-    jobs = result.scalars().all()
-    
-    return jobs
 
 
 @router.get("/jobs/{job_id}", response_model=JobResponse)
