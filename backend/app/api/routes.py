@@ -179,6 +179,75 @@ async def debug_raw_stripe():
         }
 
 
+@router.get("/debug/test-matching/{alert_id}")
+async def test_alert_matching(
+    alert_id: int,
+    db: AsyncSession = Depends(get_db)
+):
+    """Test what jobs would match a specific alert."""
+    try:
+        # Get the alert
+        alert_result = await db.execute(
+            select(UserAlert).where(UserAlert.id == alert_id)
+        )
+        alert = alert_result.scalar_one_or_none()
+        
+        if not alert:
+            return {"error": "Alert not found"}
+        
+        # Get some recent jobs to test against
+        jobs_result = await db.execute(
+            select(Job).where(Job.is_active == True)
+            .order_by(Job.first_seen_at.desc())
+            .limit(20)
+        )
+        jobs = jobs_result.scalars().all()
+        
+        # Test matching
+        from app.services.matcher import JobMatcher
+        matcher = JobMatcher(db)
+        
+        matching_jobs = []
+        non_matching_jobs = []
+        
+        for job in jobs:
+            if await matcher._job_matches_alert(job, alert):
+                matching_jobs.append({
+                    "id": job.id,
+                    "title": job.title,
+                    "location": job.location,
+                    "department": job.department,
+                    "company_id": job.company_id
+                })
+            else:
+                non_matching_jobs.append({
+                    "id": job.id,
+                    "title": job.title,
+                    "location": job.location,
+                    "reason": "failed_match"
+                })
+        
+        return {
+            "alert_name": alert.name,
+            "alert_criteria": {
+                "company_slugs": alert.company_slugs,
+                "title_keywords": alert.title_keywords,
+                "locations": alert.locations,
+                "include_remote": alert.include_remote
+            },
+            "matching_jobs_count": len(matching_jobs),
+            "matching_jobs": matching_jobs[:5],  # First 5
+            "non_matching_count": len(non_matching_jobs),
+            "sample_non_matching": non_matching_jobs[:3]
+        }
+        
+    except Exception as e:
+        return {
+            "error": str(e),
+            "error_type": type(e).__name__
+        }
+
+
 # User alerts endpoints
 @router.post("/alerts", response_model=UserAlertResponse)
 async def create_alert(
