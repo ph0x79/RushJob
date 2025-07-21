@@ -11,7 +11,7 @@ from app.core.database import get_db
 from app.models import Company, UserAlert, Job
 from app.schemas.alerts import UserAlertCreate, UserAlertResponse, UserAlertUpdate
 from app.schemas.companies import CompanyResponse
-from app.schemas.jobs import JobResponse
+from app.schemas.jobs import JobResponse, JobResponseSimple
 from app.services.greenhouse import VERIFIED_GREENHOUSE_COMPANIES, GreenhouseClient
 from app.services.discord import DiscordNotifier
 from app.services.poller import JobPollingService
@@ -258,7 +258,7 @@ async def debug_jobs_simple(limit: int = 5, db: AsyncSession = Depends(get_db)):
 
 
 # Jobs endpoints
-@router.get("/jobs", response_model=List[JobResponse])
+@router.get("/jobs", response_model=List[JobResponseSimple])
 async def get_jobs(
     company_slugs: Optional[str] = None,
     limit: int = 100,
@@ -291,7 +291,7 @@ async def get_jobs(
         )
 
 
-@router.get("/jobs/{job_id}", response_model=JobResponse)
+@router.get("/jobs/{job_id}", response_model=JobResponseSimple)
 async def get_job(
     job_id: int,
     db: AsyncSession = Depends(get_db)

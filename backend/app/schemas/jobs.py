@@ -16,6 +16,24 @@ class JobBase(BaseModel):
     external_url: str
 
 
+class JobResponseSimple(BaseModel):
+    """Simplified schema for job responses."""
+    id: int
+    external_id: str
+    title: str
+    department: Optional[str] = None
+    location: Optional[str] = None
+    job_type: Optional[str] = None
+    external_url: str
+    first_seen_at: datetime
+    last_seen_at: datetime
+    is_active: bool
+    company_id: int
+    
+    class Config:
+        from_attributes = True
+
+
 class JobResponse(JobBase):
     """Schema for job responses."""
     id: int
