@@ -152,16 +152,16 @@ VERIFIED_GREENHOUSE_COMPANIES = [
     {"name": "Coinbase", "slug": "coinbase"},
     {"name": "Reddit", "slug": "reddit"},
     {"name": "Lyft", "slug": "lyft"},
-    {"name": "DoorDash", "slug": "doordash"},
+    {"name": "DoorDash", "slug": "doordashusa"},  # Fixed slug
     {"name": "Pinterest", "slug": "pinterest"},
-    {"name": "Snowflake", "slug": "snowflake"},
+    # {"name": "Snowflake", "slug": "snowflake"},  # Uses AshbyHQ
     {"name": "Databricks", "slug": "databricks"},
     {"name": "Figma", "slug": "figma"},
     {"name": "Notion", "slug": "notion"},
-    {"name": "Canva", "slug": "canva"},
+    # {"name": "Canva", "slug": "canva"},  # Uses SmartRecruiters
     {"name": "Discord", "slug": "discord"},
     {"name": "Twitch", "slug": "twitch"},
     {"name": "Roblox", "slug": "roblox"},
     {"name": "Epic Games", "slug": "epicgames"},
-    {"name": "Shopify", "slug": "shopify"},
+    # {"name": "Shopify", "slug": "shopify"},  # Different ATS
 ]

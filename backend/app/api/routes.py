@@ -90,6 +90,41 @@ async def debug_database():
         }
 
 
+@router.post("/companies/update-slugs")
+async def update_company_slugs(db: AsyncSession = Depends(get_db)):
+    """Update company slugs that were incorrect."""
+    try:
+        updates = [
+            ("doordash", "doordashusa"),  # Fix DoorDash slug
+        ]
+        
+        updated_companies = []
+        for old_slug, new_slug in updates:
+            result = await db.execute(
+                select(Company).where(Company.slug == old_slug)
+            )
+            company = result.scalar_one_or_none()
+            
+            if company:
+                company.slug = new_slug
+                company.api_endpoint = f"https://boards-api.greenhouse.io/v1/boards/{new_slug}/jobs"
+                updated_companies.append(f"{company.name}: {old_slug} -> {new_slug}")
+        
+        await db.commit()
+        
+        return {
+            "message": f"Updated {len(updated_companies)} companies",
+            "updates": updated_companies
+        }
+    except Exception as e:
+        logger.error(f"Error updating company slugs: {e}")
+        await db.rollback()
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to update companies: {str(e)}"
+        )
+
+
 # User alerts endpoints
 @router.post("/alerts", response_model=UserAlertResponse)
 async def create_alert(
