@@ -10,6 +10,7 @@ import sys
 from app.core.config import settings
 from app.core.database import init_db, close_db
 from app.api.routes import router as api_router
+from app.api.discovery import router as discovery_router
 from app.services.poller import PollingScheduler
 
 
@@ -79,6 +80,7 @@ app.add_middleware(
 
 # Include API routes
 app.include_router(api_router, prefix=settings.api_v1_prefix)
+app.include_router(discovery_router, prefix=settings.api_v1_prefix)
 
 
 @app.get("/")
