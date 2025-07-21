@@ -7,7 +7,6 @@ from typing import Optional, List, Dict, Any
 import httpx
 from loguru import logger
 from app.core.config import settings
-from app.services.location_matcher import LocationMatcher
 
 
 class GreenhouseJob:
@@ -21,9 +20,6 @@ class GreenhouseJob:
         self.department = self._parse_department(data.get("departments", []))
         self.absolute_url = data.get("absolute_url", "")
         self.job_type = self._parse_job_type(data.get("metadata", []))
-        
-        # Initialize location matcher for enhanced detection
-        self._location_matcher = None
         
     def _parse_location(self, location_data: Dict[str, Any]) -> str:
         """Parse location from Greenhouse format with enhanced normalization."""
@@ -76,11 +72,8 @@ class GreenhouseJob:
         return hashlib.sha256(content.encode()).hexdigest()
     
     def is_remote(self) -> bool:
-        """Check if job is remote using enhanced detection."""
-        if self._location_matcher is None:
-            from app.services.location_matcher import LocationMatcher
-            self._location_matcher = LocationMatcher()
-        return self._location_matcher.is_remote_location(self.location)
+        """Check if job is remote using basic detection."""
+        return "remote" in self.location.lower()
 
 
 class GreenhouseClient:
