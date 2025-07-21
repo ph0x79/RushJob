@@ -51,8 +51,20 @@ class GreenhouseJob:
     
     def _parse_job_type(self, metadata: List[Dict[str, Any]]) -> str:
         """Extract job type from metadata."""
+        if not metadata:
+            # Fallback: guess from title if no metadata
+            title_lower = self.title.lower()
+            if "intern" in title_lower:
+                return "Intern"
+            elif "contract" in title_lower:
+                return "Contract"
+            elif "part-time" in title_lower or "part time" in title_lower:
+                return "Part-time"
+            else:
+                return "Full-time"
+        
         for item in metadata:
-            if item.get("name", "").lower() in ["employment_type", "job_type"]:
+            if item and item.get("name", "").lower() in ["employment_type", "job_type"]:
                 return item.get("value", "")
         
         # Fallback: guess from title
