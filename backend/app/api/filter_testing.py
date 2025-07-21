@@ -121,56 +121,84 @@ async def create_test_alert(
 async def test_data_quality(db: AsyncSession = Depends(get_db)):
     """Test data quality and parsing accuracy."""
     
-    # Get stats on data completeness
-    total_jobs = await db.execute(select(func.count(Job.id)).where(Job.is_active == True))
-    total_count = total_jobs.scalar()
-    
-    # Jobs with various fields populated
-    jobs_with_location = await db.execute(
-        select(func.count(Job.id)).where(Job.is_active == True, Job.location.isnot(None), Job.location != "")
-    )
-    
-    jobs_with_department = await db.execute(
-        select(func.count(Job.id)).where(Job.is_active == True, Job.department.isnot(None), Job.department != "")
-    )
-    
-    jobs_with_job_type = await db.execute(
-        select(func.count(Job.id)).where(Job.is_active == True, Job.job_type.isnot(None), Job.job_type != "")
-    )
-    
-    # Sample of jobs for manual review
-    sample_jobs = await db.execute(
-        select(Job, Company).join(Company)
-        .where(Job.is_active == True)
-        .order_by(Job.first_seen_at.desc())
-        .limit(20)
-    )
-    
-    sample_data = []
-    for job, company in sample_jobs.all():
-        sample_data.append({
-            "company": company.name,
-            "title": job.title,
-            "location": job.location,
-            "department": job.department,
-            "job_type": job.job_type,
-            "has_location": bool(job.location and job.location.strip()),
-            "has_department": bool(job.department and job.department.strip()),
-            "has_job_type": bool(job.job_type and job.job_type.strip())
-        })
-    
-    return {
-        "data_quality_stats": {
-            "total_jobs": total_count,
-            "jobs_with_location": jobs_with_location.scalar(),
-            "jobs_with_department": jobs_with_department.scalar(),
-            "jobs_with_job_type": jobs_with_job_type.scalar(),
-            "location_coverage": round(jobs_with_location.scalar() / total_count * 100, 1),
-            "department_coverage": round(jobs_with_department.scalar() / total_count * 100, 1),
-            "job_type_coverage": round(jobs_with_job_type.scalar() / total_count * 100, 1)
-        },
-        "sample_jobs": sample_data
-    }
+    try:
+        # Get stats on data completeness
+        total_jobs = await db.execute(select(func.count(Job.id)).where(Job.is_active == True))
+        total_count = total_jobs.scalar() or 0
+        
+        if total_count == 0:
+            return {
+                "error": "No active jobs found in database",
+                "data_quality_stats": {
+                    "total_jobs": 0,
+                    "jobs_with_location": 0,
+                    "jobs_with_department": 0,
+                    "jobs_with_job_type": 0,
+                    "location_coverage": 0,
+                    "department_coverage": 0,
+                    "job_type_coverage": 0
+                },
+                "sample_jobs": []
+            }
+        
+        # Jobs with various fields populated
+        jobs_with_location = await db.execute(
+            select(func.count(Job.id)).where(Job.is_active == True, Job.location.isnot(None), Job.location != "")
+        )
+        
+        jobs_with_department = await db.execute(
+            select(func.count(Job.id)).where(Job.is_active == True, Job.department.isnot(None), Job.department != "")
+        )
+        
+        jobs_with_job_type = await db.execute(
+            select(func.count(Job.id)).where(Job.is_active == True, Job.job_type.isnot(None), Job.job_type != "")
+        )
+        
+        location_count = jobs_with_location.scalar() or 0
+        department_count = jobs_with_department.scalar() or 0
+        job_type_count = jobs_with_job_type.scalar() or 0
+        
+        # Sample of jobs for manual review
+        sample_jobs = await db.execute(
+            select(Job, Company).join(Company)
+            .where(Job.is_active == True)
+            .order_by(Job.first_seen_at.desc())
+            .limit(20)
+        )
+        
+        sample_data = []
+        for job, company in sample_jobs.all():
+            sample_data.append({
+                "company": company.name,
+                "title": job.title,
+                "location": job.location,
+                "department": job.department,
+                "job_type": job.job_type,
+                "has_location": bool(job.location and job.location.strip()),
+                "has_department": bool(job.department and job.department.strip()),
+                "has_job_type": bool(job.job_type and job.job_type.strip())
+            })
+        
+        return {
+            "data_quality_stats": {
+                "total_jobs": total_count,
+                "jobs_with_location": location_count,
+                "jobs_with_department": department_count,
+                "jobs_with_job_type": job_type_count,
+                "location_coverage": round(location_count / total_count * 100, 1) if total_count > 0 else 0,
+                "department_coverage": round(department_count / total_count * 100, 1) if total_count > 0 else 0,
+                "job_type_coverage": round(job_type_count / total_count * 100, 1) if total_count > 0 else 0
+            },
+            "sample_jobs": sample_data
+        }
+        
+    except Exception as e:
+        logger.error(f"Error in data quality test: {e}")
+        return {
+            "error": f"Database error: {str(e)}",
+            "data_quality_stats": {},
+            "sample_jobs": []
+        }
 
 @router.get("/test-filters/location-patterns")
 async def test_location_patterns(db: AsyncSession = Depends(get_db)):

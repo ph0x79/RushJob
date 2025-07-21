@@ -186,26 +186,38 @@ class LocationMatcher:
                 if job_part == target_part:
                     logger.debug(f"Direct match: '{job_part}' == '{target_part}'")
                     return True
-                
-                # Check substring matches (both directions)
-                if job_part in target_part or target_part in job_part:
-                    logger.debug(f"Substring match: '{job_part}' <-> '{target_part}'")
-                    return True
         
-        # Check against location mappings
+        # Check against location mappings (more precise than substring matching)
         for canonical, aliases in self.location_mappings.items():
-            job_matches = any(
-                any(alias in job_part or job_part in alias for alias in aliases)
-                for job_part in job_parts
-            )
-            target_matches = any(
-                any(alias in target_part or target_part in alias for alias in aliases)
-                for target_part in target_parts
-            )
+            job_matches = False
+            target_matches = False
+            
+            # Check if job location matches this canonical location
+            for job_part in job_parts:
+                if job_part in aliases or any(alias == job_part for alias in aliases):
+                    job_matches = True
+                    break
+            
+            # Check if target location matches this canonical location  
+            for target_part in target_parts:
+                if target_part in aliases or any(alias == target_part for alias in aliases):
+                    target_matches = True
+                    break
             
             if job_matches and target_matches:
                 logger.debug(f"Alias match via '{canonical}': job={job_matches}, target={target_matches}")
                 return True
+        
+        # Fallback: limited substring matching for very similar terms
+        # Only allow if the substring is substantial (>= 3 chars) and meaningful
+        for job_part in job_parts:
+            for target_part in target_parts:
+                if len(job_part) >= 3 and len(target_part) >= 3:
+                    # Allow substring matching for city names that are very similar
+                    if (job_part in target_part and len(job_part) / len(target_part) > 0.6) or \
+                       (target_part in job_part and len(target_part) / len(job_part) > 0.6):
+                        logger.debug(f"Careful substring match: '{job_part}' <-> '{target_part}'")
+                        return True
         
         logger.debug(f"No match found between '{job_location}' and '{target_location}'")
         return False
