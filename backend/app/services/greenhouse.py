@@ -7,12 +7,14 @@ from typing import Optional, List, Dict, Any
 import httpx
 from loguru import logger
 from app.core.config import settings
+from app.services.location_matcher import LocationMatcher
 
 
 class GreenhouseJob:
     """Represents a job from Greenhouse API."""
     
     def __init__(self, data: Dict[str, Any]):
+        self.location_matcher = LocationMatcher()
         self.raw_data = data
         self.id = str(data.get("id", ""))
         self.title = data.get("title", "")
@@ -22,15 +24,26 @@ class GreenhouseJob:
         self.job_type = self._parse_job_type(data.get("metadata", []))
         
     def _parse_location(self, location_data: Dict[str, Any]) -> str:
-        """Parse location from Greenhouse format."""
+        """Parse location from Greenhouse format with enhanced normalization."""
         if not location_data:
             return ""
         
         name = location_data.get("name", "")
-        # Handle remote jobs
-        if "remote" in name.lower():
+        if not name:
+            return ""
+        
+        # Use location matcher for better remote detection
+        if self.location_matcher.is_remote_location(name):
             return "Remote"
-        return name
+        
+        # Clean up common location format issues
+        # Handle patterns like "US-NYC", "CA-Toronto", etc.
+        if "-" in name and len(name.split("-")) == 2:
+            prefix, location = name.split("-", 1)
+            if prefix.upper() in ["US", "CA", "UK", "DE", "FR", "AU"]:
+                return location.strip()
+        
+        return name.strip()
     
     def _parse_department(self, departments: List[Dict[str, Any]]) -> str:
         """Extract primary department name."""
@@ -61,8 +74,8 @@ class GreenhouseJob:
         return hashlib.sha256(content.encode()).hexdigest()
     
     def is_remote(self) -> bool:
-        """Check if job is remote."""
-        return "remote" in self.location.lower()
+        """Check if job is remote using enhanced detection."""
+        return self.location_matcher.is_remote_location(self.location)
 
 
 class GreenhouseClient:
