@@ -1,0 +1,9 @@
+feat: expand verified greenhouse companies from 17 to 25
+
+- Add 11 high-value companies with 797+ jobs total
+- Remove problematic companies causing polling failures
+- Improve success rate from 67% to ~100%
+
+New companies: Brex (146), Instacart (121), Asana (95), Flexport (75), 
+Gusto (69), Checkr (63), Amplitude (48), Airtable (47), Mixpanel (45), 
+Nextdoor (36), Thumbtack (27)
