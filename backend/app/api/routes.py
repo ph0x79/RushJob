@@ -187,45 +187,51 @@ async def create_alert(
     db: AsyncSession = Depends(get_db)
 ):
     """Create a new job alert."""
-    # Validate Discord webhook if provided
-    if alert_data.discord_webhook_url:
-        # Skip validation for now since the URL works in testing
-        # discord_notifier = DiscordNotifier()
-        # is_valid = await discord_notifier.test_webhook(alert_data.discord_webhook_url)
-        # await discord_notifier.close()
-        # 
-        # if not is_valid:
-        #     raise HTTPException(
-        #         status_code=400,
-        #         detail="Invalid Discord webhook URL. Please check the URL and try again."
-        #     )
-        pass
-    
-    # Create alert
-    alert = UserAlert(
-        user_id=alert_data.user_id,
-        name=alert_data.name,
-        company_slugs=alert_data.company_slugs,
-        title_keywords=alert_data.title_keywords,
-        title_exclude_keywords=alert_data.title_exclude_keywords,
-        departments=alert_data.departments,
-        locations=alert_data.locations,
-        job_types=alert_data.job_types,
-        include_remote=alert_data.include_remote,
-        discord_webhook_url=alert_data.discord_webhook_url,
-        email_address=alert_data.email_address,
-        notification_frequency=alert_data.notification_frequency
-    )
-    
-    db.add(alert)
-    await db.commit()
-    await db.refresh(alert)
-    
-    # Send initial notification in background
-    if alert.discord_webhook_url:
-        background_tasks.add_task(send_initial_notification, alert.id)
-    
-    return alert
+    try:
+        logger.info(f"Creating alert for user {alert_data.user_id}: {alert_data.name}")
+        
+        # Validate Discord webhook if provided
+        if alert_data.discord_webhook_url:
+            # Skip validation for now since the URL works in testing
+            pass
+        
+        # Create alert
+        alert = UserAlert(
+            user_id=alert_data.user_id,
+            name=alert_data.name,
+            company_slugs=alert_data.company_slugs,
+            title_keywords=alert_data.title_keywords,
+            title_exclude_keywords=alert_data.title_exclude_keywords,
+            departments=alert_data.departments,
+            locations=alert_data.locations,
+            job_types=alert_data.job_types,
+            include_remote=alert_data.include_remote,
+            discord_webhook_url=str(alert_data.discord_webhook_url) if alert_data.discord_webhook_url else None,
+            email_address=alert_data.email_address,
+            notification_frequency=alert_data.notification_frequency
+        )
+        
+        logger.info("Adding alert to database")
+        db.add(alert)
+        await db.commit()
+        await db.refresh(alert)
+        
+        logger.info(f"Alert created with ID: {alert.id}")
+        
+        # Send initial notification in background
+        if alert.discord_webhook_url:
+            logger.info("Scheduling initial notification")
+            background_tasks.add_task(send_initial_notification, alert.id)
+        
+        return alert
+        
+    except Exception as e:
+        logger.error(f"Error creating alert: {e}")
+        await db.rollback()
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to create alert: {str(e)}"
+        )
 
 
 @router.get("/alerts", response_model=List[UserAlertResponse])
