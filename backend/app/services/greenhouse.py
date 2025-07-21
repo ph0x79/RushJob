@@ -105,6 +105,15 @@ class GreenhouseClient:
             data = response.json()
             jobs_data = data.get("jobs", [])
             
+            # Debug logging for problematic companies
+            if company_slug in ["stripe", "figma", "notion", "twitch"]:
+                logger.info(f"API response for {company_slug}: status={response.status_code}, data_keys={list(data.keys()) if isinstance(data, dict) else 'not_dict'}")
+                logger.info(f"Jobs data type: {type(jobs_data)}, length: {len(jobs_data) if jobs_data else 'None'}")
+            
+            if not jobs_data:
+                logger.warning(f"No jobs found for {company_slug}. Response data: {data}")
+                return []
+            
             jobs = [GreenhouseJob(job_data) for job_data in jobs_data]
             logger.info(f"Found {len(jobs)} jobs for {company_slug}")
             

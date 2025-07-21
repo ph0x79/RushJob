@@ -135,6 +135,13 @@ async def test_stripe_directly():
         jobs = await client.fetch_jobs("stripe")
         await client.close()
         
+        if jobs is None:
+            return {
+                "success": False,
+                "error": "API returned None instead of job list",
+                "jobs_found": 0
+            }
+        
         return {
             "success": True,
             "jobs_found": len(jobs),
@@ -147,6 +154,26 @@ async def test_stripe_directly():
     except Exception as e:
         return {
             "success": False,
+            "error": str(e),
+            "error_type": type(e).__name__
+        }
+
+
+@router.get("/debug/raw-stripe")
+async def debug_raw_stripe():
+    """Test raw Stripe API response."""
+    try:
+        import httpx
+        async with httpx.AsyncClient() as client:
+            response = await client.get("https://boards-api.greenhouse.io/v1/boards/stripe/jobs")
+            return {
+                "status_code": response.status_code,
+                "headers": dict(response.headers),
+                "content_type": response.headers.get("content-type"),
+                "response_text": response.text[:500] + "..." if len(response.text) > 500 else response.text
+            }
+    except Exception as e:
+        return {
             "error": str(e),
             "error_type": type(e).__name__
         }
