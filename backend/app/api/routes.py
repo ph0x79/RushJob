@@ -125,6 +125,33 @@ async def update_company_slugs(db: AsyncSession = Depends(get_db)):
         )
 
 
+@router.get("/debug/test-stripe")
+async def test_stripe_directly():
+    """Test Stripe API directly."""
+    try:
+        from app.services.greenhouse import GreenhouseClient
+        client = GreenhouseClient()
+        
+        jobs = await client.fetch_jobs("stripe")
+        await client.close()
+        
+        return {
+            "success": True,
+            "jobs_found": len(jobs),
+            "sample_job": {
+                "id": jobs[0].id if jobs else None,
+                "title": jobs[0].title if jobs else None,
+                "location": jobs[0].location if jobs else None
+            } if jobs else None
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "error": str(e),
+            "error_type": type(e).__name__
+        }
+
+
 # User alerts endpoints
 @router.post("/alerts", response_model=UserAlertResponse)
 async def create_alert(

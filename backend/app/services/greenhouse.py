@@ -70,9 +70,15 @@ class GreenhouseClient:
     
     def __init__(self):
         self.base_url = "https://boards-api.greenhouse.io/v1/boards"
+        # Add headers that some companies might require
+        headers = {
+            "User-Agent": "RushJob/1.0",
+            "Accept": "application/json",
+        }
         self.client = httpx.AsyncClient(
             timeout=settings.request_timeout_seconds,
-            limits=httpx.Limits(max_connections=settings.max_concurrent_polls)
+            limits=httpx.Limits(max_connections=settings.max_concurrent_polls),
+            headers=headers
         )
     
     async def fetch_jobs(self, company_slug: str) -> List[GreenhouseJob]:
