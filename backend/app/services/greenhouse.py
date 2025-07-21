@@ -212,13 +212,22 @@ VERIFIED_GREENHOUSE_COMPANIES = [
     {"name": "Nextdoor", "slug": "nextdoor"},          # 36 jobs
     {"name": "Thumbtack", "slug": "thumbtack"},        # 27 jobs
     
+    # Newly discovered high-value companies (January 2025)
+    {"name": "TripAdvisor", "slug": "tripadvisor"},    # 148 jobs
+    {"name": "Bird", "slug": "bird"},                  # 101 jobs
+    {"name": "Chime", "slug": "chime"},                # 53 jobs
+    {"name": "Kayak", "slug": "kayak"},                # 52 jobs
+    {"name": "Mercury", "slug": "mercury"},            # 45 jobs
+    {"name": "Industrious", "slug": "industrious"},    # 42 jobs
+    {"name": "Strava", "slug": "strava"},              # 26 jobs
+    
     # Companies that may need verification or have been problematic
     # {"name": "Notion", "slug": "notion"},            # May have moved to AshbyHQ
     # {"name": "Roblox", "slug": "roblox"},            # May use enterprise ATS
     # {"name": "Epic Games", "slug": "epicgames"},     # May use custom ATS
     
-    # Companies confirmed NOT to use Greenhouse
-    # {"name": "Snowflake", "slug": "snowflake"},      # Uses AshbyHQ
+    # Companies confirmed NOT to use Greenhouse (remove these)
     # {"name": "Canva", "slug": "canva"},              # Uses SmartRecruiters
     # {"name": "Shopify", "slug": "shopify"},          # Uses custom ATS
+    # {"name": "Snowflake", "slug": "snowflake"},      # Uses AshbyHQ
 ]
