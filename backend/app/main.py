@@ -41,13 +41,12 @@ async def lifespan(app: FastAPI):
     
     # Start background polling if not in debug mode
     global polling_scheduler
-    if not settings.debug:
-        polling_scheduler = PollingScheduler()
-        # Note: In production, you'd want to run this in a separate worker process
-        # For MVP, we'll start it as a background task
-        import asyncio
-        asyncio.create_task(polling_scheduler.start_polling(settings.default_poll_interval_minutes))
-        logger.info("Background polling started")
+    # Temporarily disable background polling until DB is working
+    # if not settings.debug:
+    #     polling_scheduler = PollingScheduler()
+    #     import asyncio
+    #     asyncio.create_task(polling_scheduler.start_polling(settings.default_poll_interval_minutes))
+    #     logger.info("Background polling started")
     
     yield
     
